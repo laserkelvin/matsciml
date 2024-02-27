@@ -1,3 +1,7 @@
 from __future__ import annotations
 
-__version__ = "1.1.0"
+# this ensures that the package registry is built so optional
+# features can be checked later on
+from matsciml.common.packages import package_registry  # noqa: F401
+
+__version__ = "1.2.0"
