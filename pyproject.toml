@@ -15,7 +15,6 @@ classifiers = [
 dependencies = [
   "psutil",
   "pytorch_lightning==2.1.3",
-  "dgl==2.0.0",
   "dgllife==0.3.2",
   "rdkit==2023.3.1",
   "numba>=0.55.0",
@@ -58,6 +57,9 @@ pyg = [
   "torch_scatter==2.1.1",
   "torch_sparse==0.6.17",
   "pybind11"
+]
+dgl = [
+  "dgl==2.0.0",
 ]
 symmetry = [
   "rowan==1.3.0.post1",
