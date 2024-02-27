@@ -39,6 +39,12 @@ The examples outlined in the next section how to get started with Open MatSci ML
 
 ### Installation
 
+Due to recent changes (`dgl>1.1.3`) with how DGL is distributed, we are currently unable to specify DGL as a core dependency in `pyproject.toml` and have it resolve correctly
+(see [Issue #138](https://github.com/IntelLabs/matsciml/issues/138)).
+Because of this, we have pinned the version of DGL as an optional dependency for now just to allow the installation to complete, but please be aware that most of the `matsciml`
+functionality is still written with the expectation of DGL being installed. Regardless of the platform you are using, we recommend using either `docker` or `conda`/`mamba`
+to run `matsciml`:
+
 - `Docker`: We provide a Dockerfile inside the `docker` that can be run to install a container using standard docker commands.
 - `Conda`: We have included a `conda` specification that provides a complete installation including Intel Data Center GPU Max Series support for PyTorch. Run `conda env create -n matsciml --file conda.yml`. Please note that this may not work for other vendors, and might need to be modified with their corresponding libraries (e.g. CUDA toolkit, etc.). Installation may also appear to take a while, as `torch_geometric` and other dependencies are built.
 
