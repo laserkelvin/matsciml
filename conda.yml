@@ -2,10 +2,12 @@ name: matsciml
 channels:
   - defaults
   - intel
+  - dglteam
 dependencies:
   - intel::intel-aikit-pytorch=2023.2
   - intel::scipy
   - intel::numba
+  - dglteam::dgl=2.0.0
   - setuptools
   - pybind11
   - pip
