@@ -65,6 +65,9 @@ class AbstractLabelTransform(AbstractDataTransform):
                 "statistics will be aggregated over the whole dataset!"
             )
         self._dataset_len = len(dataset)
+        # if we are using sampling mode, run it at the beginning
+        if self.agg_method == "sampled":
+            self._sampled_agg_func(dataset)
         return super().setup_transform(dataset)
 
     @property
@@ -97,7 +100,7 @@ class AbstractLabelTransform(AbstractDataTransform):
         }
 
     @abstractmethod
-    def _sampled_agg_func(self, *args, **kwargs) -> Any:
+    def _sampled_agg_func(self, dataset: BaseLMDBDataset, *args, **kwargs) -> Any:
         """Implements a sampling-based version of the label transformation."""
         ...
 
@@ -107,7 +110,7 @@ class AbstractLabelTransform(AbstractDataTransform):
         ...
 
     @abstractmethod
-    def _moving_agg_func(self, *args, **kwargs) -> Any:
+    def _moving_agg_func(self, sample: DataDict, *args, **kwargs) -> Any:
         """Implements an moving/tracked version of the label transformation."""
         ...
 
