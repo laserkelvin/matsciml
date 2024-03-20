@@ -1,7 +1,7 @@
 # Copyright (C) 2024 Intel Corporation
 # SPDX-License-Identifier: MIT License
 from __future__ import annotations
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 from logging import getLogger
 from abc import abstractmethod
 from random import sample as choose_without_replacement
@@ -133,6 +133,3 @@ class AbstractLabelTransform(AbstractDataTransform):
             sample = dataset.__getitem__(index)
             data_samples.append(sample)
         return data_samples
-
-    def compute_statistic(self, key: str, agg_func: Literal["mean", "std"] | Callable):
-        ...
