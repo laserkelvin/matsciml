@@ -112,7 +112,7 @@ class NormalLabelTransform(AbstractLabelTransform):
             data = torch.stack(data)
         else:
             data = torch.FloatTensor(data)
-        mean, std = data.mean(), data.std()
+        mean, std = data.mean().item(), data.std().item()
         self.mean = mean
         self.std = std
         return None
