@@ -6,7 +6,9 @@ import functools
 from abc import abstractmethod
 from pathlib import Path
 from random import sample
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from hashlib import sha512
+from typing import Any, Callable
+from logging import getLogger
 
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -21,6 +23,9 @@ else:
     from functools import lru_cache
 
     cache = lru_cache(maxsize=None)
+
+
+logger = getLogger(__file__)
 
 
 class BaseLMDBDataset(Dataset):
@@ -314,6 +319,45 @@ class BaseLMDBDataset(Dataset):
         if not data:
             data = [self.__getitem__(index) for index in range(len(self))]
         utils.parallel_lmdb_write(target_dir, data, num_procs, metadata)
+
+    @property
+    def data_sample_hash(self) -> str:
+        """
+        Compute a hash for a dataset based on indicative samples.
+
+        This function intends to summarize a given dataset based on
+        five raw data samples from it. By drawing from start, end,
+        and three percentile points in between, the idea is that
+        we should hopefully capture the composition of a dataset
+        even if it constitutes multiple LMDB files. That we can
+        reliably say the statistics being used/computed actually
+        correspond to the data being used.
+
+        Returns
+        -------
+        str
+            SHA-512 hash based off five data samples from the dataset.
+        """
+        hasher = sha512()
+        num_samples = len(self)
+        # get the first and last points, plus quantiles in between
+        # as indicative samples
+        indices = (
+            [
+                0,
+            ]
+            + [int(num_samples * percent) for percent in [0.25, 0.5, 0.75]]
+            + num_samples
+        )
+        logger.info(f"Hashing {self} at indices {indices}")
+        for index in indices:
+            (lmdb_index, subindex) = self.index_to_key(index)
+            sample = self.data_from_key(lmdb_index, subindex)
+            # convert data sample to binary format for hashing
+            hasher.update(bytes(str(sample), "utf-8"))
+        value = hasher.hexdigest()
+        logger.info(f"Produced SHA512: {value}")
+        return value
 
 
 class PointCloudDataset(BaseLMDBDataset):
