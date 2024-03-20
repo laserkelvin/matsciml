@@ -8,6 +8,7 @@ import torch
 
 from matsciml.common.types import DataDict
 from matsciml.datasets.transforms.labels.base import AbstractLabelTransform
+from matsciml.datasets.base import BaseLMDBDataset
 
 
 logger = getLogger(__file__)
@@ -76,4 +77,42 @@ class NormalLabelTransform(AbstractLabelTransform):
         # update the actual values
         self.mean = new_mean
         self.std = new_std
+        return None
+
+    def _sampled_agg_func(self, dataset: BaseLMDBDataset, *args, **kwargs) -> None:
+        """
+        Computes mean and standard deviation by sampling from the dataset.
+
+        This is triggered once at the setup stage, and works by just
+        randomly grabbing ``num_samples`` worth of data from the dataset,
+        and calculating mean/std that way.
+
+        Parameters
+        ----------
+        dataset : BaseLMDBDataset
+            Instance of an LMDB dataset.
+
+        Raises
+        ------
+        KeyError:
+            Raises ``KeyError`` if ``label_key`` could not retrieve
+            data from within a ``DataDict``.
+        """
+        samples = self.sample_data(dataset)
+        try:
+            data = [sample[self.label_key] for sample in samples]
+        except KeyError as error:
+            raise KeyError(
+                f"Unable to retrieve {self.label_key} from data; "
+                f"available:{samples[0].keys()}"
+            ) from error
+        # concatenate tensors if they are tensors, otherwise
+        # create a tensor from list of values
+        if isinstance(data[0], torch.Tensor):
+            data = torch.stack(data)
+        else:
+            data = torch.FloatTensor(data)
+        mean, std = data.mean(), data.std()
+        self.mean = mean
+        self.std = std
         return None
