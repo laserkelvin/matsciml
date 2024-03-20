@@ -1,8 +1,9 @@
 # Copyright (C) 2024 Intel Corporation
 # SPDX-License-Identifier: MIT License
 from __future__ import annotations
-from typing import Callable, Literal
+from typing import Any, Callable, Literal
 from logging import getLogger
+from abc import abstractmethod
 
 import torch
 from torch.utils.data import Dataset
@@ -89,6 +90,21 @@ class AbstractLabelTransform(AbstractDataTransform):
             "agg_func": getattr(self, "agg_func", None),
             "num_samples": self.num_samples,
         }
+
+    @abstractmethod
+    def _sampled_agg_func(self, *args, **kwargs) -> Any:
+        """Implements a sampling-based version of the label transformation."""
+        ...
+
+    @abstractmethod
+    def _static_agg_func(self, *args, **kwargs) -> Any:
+        """Implements an immutable version of the label transformation."""
+        ...
+
+    @abstractmethod
+    def _moving_agg_func(self, *args, **kwargs) -> Any:
+        """Implements an moving/tracked version of the label transformation."""
+        ...
 
     def sample_data(self) -> list[DataDict]:
         ...
