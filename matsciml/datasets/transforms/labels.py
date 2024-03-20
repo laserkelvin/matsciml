@@ -52,7 +52,8 @@ class AbstractLabelTransform(AbstractDataTransform):
             self.num_samples = int(self.num_samples * len(dataset))
         elif not self.num_samples:
             logger.warning(
-                "Number of samples was not provided, statistics will be aggregated over the whole dataset!"
+                "Number of samples was not provided, "
+                "statistics will be aggregated over the whole dataset!"
             )
         return super().setup_transform(dataset)
 
