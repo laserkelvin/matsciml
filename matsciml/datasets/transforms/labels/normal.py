@@ -23,6 +23,11 @@ class NormalLabelTransform(AbstractLabelTransform):
         agg_method: Literal["static", "sampled", "moving"] = "moving",
         num_samples: int | float | None = None,
     ) -> None:
+        if value is not None:
+            logger.info(
+                "Value passed to NormalLabelTransform, but is not used."
+                " Please ensure mean/std is passed instead."
+            )
         super().__init__(label_key, value, agg_method, num_samples)
         self.mean = mean
         self.std = std
