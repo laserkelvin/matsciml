@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Callable, Literal
 from logging import getLogger
 from abc import abstractmethod
+from random import sample as choose_without_replacement
 
 import torch
 from torch.utils.data import Dataset
@@ -60,6 +61,7 @@ class AbstractLabelTransform(AbstractDataTransform):
                 "Number of samples was not provided, "
                 "statistics will be aggregated over the whole dataset!"
             )
+        self._dataset_len = len(dataset)
         return super().setup_transform(dataset)
 
     @property
@@ -106,8 +108,31 @@ class AbstractLabelTransform(AbstractDataTransform):
         """Implements an moving/tracked version of the label transformation."""
         ...
 
-    def sample_data(self) -> list[DataDict]:
-        ...
+    def sample_data(self, dataset: BaseLMDBDataset) -> list[DataDict]:
+        """
+        Draw random samples from a target dataset.
+
+        This method will call ``dataset.__getitem__`` to retrieve a specified
+        number of samples without replacement.
+
+        Parameters
+        ----------
+        dataset : BaseLMDBDataset
+            Instance of an LMDB dataset.
+
+        Returns
+        -------
+        list[DataDict]
+            List of data samples retrieved from the dataset.
+        """
+        assert self.num_samples, "Data sampling needs a specified `num_samples`!"
+        indices = list(range(self._dataset_len))
+        sample_indices = choose_without_replacement(indices, k=self.num_samples)
+        data_samples = []
+        for index in sample_indices:
+            sample = dataset.__getitem__(index)
+            data_samples.append(sample)
+        return data_samples
 
     def compute_statistic(self, key: str, agg_func: Literal["mean", "std"] | Callable):
         ...
