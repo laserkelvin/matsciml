@@ -15,15 +15,21 @@ logger = getLogger(__file__)
 
 
 class AbstractLabelTransform(AbstractDataTransform):
+    __valid_agg_str__ = ["static", "sampled", "moving"]
+
     def __init__(
         self,
         label_key: str,
         value: float | torch.Tensor | None = None,
+        agg_method: Literal["static", "sampled", "moving"] = "moving",
         num_samples: int | float | None = None,
     ) -> None:
         super().__init__()
         self.label_key = label_key
         self.value = value
+        assert (
+            agg_method in self.__valid_agg_str__
+        ), f"Requested agg_method not valid; available: {self.__valid_agg_str__}"
         self.num_samples = num_samples
 
     def setup_transform(self, dataset: BaseLMDBDataset) -> None:
