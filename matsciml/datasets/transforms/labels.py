@@ -40,9 +40,8 @@ class AbstractLabelTransform(AbstractDataTransform):
         """
         # stash the dataset class name
         self.parent_dataset_type = dataset
-        # we need to hash the dataset that's loaded
-        data_sha = self._hash_dataset(dataset)
-        self.data_sha512 = data_sha
+        # we need to hash the dataset that's actually loaded from disk
+        self.data_sha512 = dataset.data_sample_hash
         # convert fractional samples to actual number
         if isinstance(self.num_samples, float):
             assert (
