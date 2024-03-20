@@ -110,6 +110,15 @@ class AbstractLabelTransform(AbstractDataTransform):
         """Implements an moving/tracked version of the label transformation."""
         ...
 
+    @abstractmethod
+    def apply_transformation(self, sample: DataDict) -> DataDict:
+        """Implements the actual transformation step."""
+        ...
+
+    def __call__(self, data: DataDict) -> DataDict:
+        """Introduced to provide the same behavior as any other transform."""
+        return self.apply_transformation(data)
+
     def sample_data(self, dataset: BaseLMDBDataset) -> list[DataDict]:
         """
         Draw random samples from a target dataset.
