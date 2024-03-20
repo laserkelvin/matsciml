@@ -347,7 +347,9 @@ class BaseLMDBDataset(Dataset):
                 0,
             ]
             + [int(num_samples * percent) for percent in [0.25, 0.5, 0.75]]
-            + num_samples
+            + [
+                num_samples,
+            ]
         )
         logger.info(f"Hashing {self} at indices {indices}")
         for index in indices:
