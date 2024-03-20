@@ -118,6 +118,13 @@ class AbstractLabelTransform(AbstractDataTransform):
 
     def __call__(self, data: DataDict) -> DataDict:
         """Introduced to provide the same behavior as any other transform."""
+        if self.agg_method == "moving":
+            # update moving average value with new data
+            self._moving_agg_func(data)
+        elif self.agg_method == "static":
+            # for static updates
+            self._static_agg_func(data)
+        # once values have been updated, apply the transform
         return self.apply_transformation(data)
 
     def sample_data(self, dataset: BaseLMDBDataset) -> list[DataDict]:
