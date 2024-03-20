@@ -34,6 +34,7 @@ class AbstractLabelTransform(AbstractDataTransform):
         assert (
             agg_method in self.__valid_agg_str__
         ), f"Requested agg_method not valid; available: {self.__valid_agg_str__}"
+        self.agg_method = agg_method
         self.num_samples = num_samples
 
     def setup_transform(self, dataset: BaseLMDBDataset) -> None:
