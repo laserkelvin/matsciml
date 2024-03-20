@@ -20,7 +20,7 @@ class AbstractLabelTransform(AbstractDataTransform):
         self,
         label_key: str,
         value: float | torch.Tensor | None = None,
-        num_samples: int | None = None,
+        num_samples: int | float | None = None,
     ) -> None:
         super().__init__()
         self.label_key = label_key
@@ -44,6 +44,16 @@ class AbstractLabelTransform(AbstractDataTransform):
         # we need to hash the dataset that's loaded
         data_sha = self._hash_dataset(dataset)
         self.data_sha512 = data_sha
+        # convert fractional samples to actual number
+        if isinstance(self.num_samples, float):
+            assert (
+                0.0 < self.num_samples <= 1.0
+            ), "Fractional number of samples requested, but not between [0,1]."
+            self.num_samples = int(self.num_samples * len(dataset))
+        elif not self.num_samples:
+            logger.warning(
+                "Number of samples was not provided, statistics will be aggregated over the whole dataset!"
+            )
         return super().setup_transform(dataset)
 
     @property
@@ -112,13 +122,14 @@ class AbstractLabelTransform(AbstractDataTransform):
         return value
 
     @property
-    def serializable_format(self) -> dict[str, str | float]:
+    def serializable_format(self) -> dict[str, str | float | None]:
         return {
             "dataset": self.parent_dataset_type,
             "sha512": self.data_sha512,
             "key": self.label_key,
-            "value": self.value,
-            "agg_func": self.agg_func,
+            "value": getattr(self, "value", None),
+            "agg_func": getattr(self, "agg_func", None),
+            "num_samples": self.num_samples,
         }
 
     def sample_data(self) -> list[DataDict]:
