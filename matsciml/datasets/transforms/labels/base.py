@@ -15,6 +15,8 @@ from matsciml.datasets.base import BaseLMDBDataset
 
 logger = getLogger(__file__)
 
+__all__ = ["AbstractLabelTransform"]
+
 
 class AbstractLabelTransform(AbstractDataTransform):
     __valid_agg_str__ = ["static", "sampled", "moving"]
