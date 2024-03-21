@@ -78,7 +78,12 @@ class OQMDDataset(PointCloudDataset):
         return_dict["pos"] = coords
         cell = data["cell"]
         system_size = coords.size(0)
-        node_choices = self.choose_dst_nodes(system_size, self.full_pairwise)
+        # getattr is used so that we can default to False; this comes
+        # into play when transforms are being initialized and full_pairwise
+        # as an attribute might be missing
+        node_choices = self.choose_dst_nodes(
+            system_size, getattr(self, "full_pairwise", False)
+        )
         src_nodes, dst_nodes = node_choices["src_nodes"], node_choices["dst_nodes"]
         atom_numbers = torch.LongTensor(data["atomic_numbers"])
         # uses one-hot encoding featurization

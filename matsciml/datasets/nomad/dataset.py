@@ -111,7 +111,12 @@ class NomadDataset(PointCloudDataset):
         )
         system_size = len(cart_coords)
         return_dict["pos"] = cart_coords
-        chosen_nodes = self.choose_dst_nodes(system_size, self.full_pairwise)
+        # getattr is used so that we can default to False; this comes
+        # into play when transforms are being initialized and full_pairwise
+        # as an attribute might be missing
+        chosen_nodes = self.choose_dst_nodes(
+            system_size, getattr(self, "full_pairwise", False)
+        )
         src_nodes, dst_nodes = chosen_nodes["src_nodes"], chosen_nodes["dst_nodes"]
 
         atomic_numbers = torch.LongTensor(
