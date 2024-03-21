@@ -66,7 +66,9 @@ class ColabFitDataset(PointCloudDataset):
         # check to make sure 3D coordinates
         assert coords.size(-1) == 3
         system_size = coords.size(0)
-        node_choices = self.choose_dst_nodes(system_size, self.full_pairwise)
+        node_choices = self.choose_dst_nodes(
+            system_size, getattr(self, "full_pairwise", False)
+        )
         src_nodes, dst_nodes = node_choices["src_nodes"], node_choices["dst_nodes"]
         # typecast atomic numbers
         atom_numbers = torch.LongTensor(data["atomic_numbers"])
