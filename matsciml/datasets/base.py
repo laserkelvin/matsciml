@@ -321,6 +321,7 @@ class BaseLMDBDataset(Dataset):
         utils.parallel_lmdb_write(target_dir, data, num_procs, metadata)
 
     @property
+    @cache
     def data_sample_hash(self) -> str:
         """
         Compute a hash for a dataset based on indicative samples.
