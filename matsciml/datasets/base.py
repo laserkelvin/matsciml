@@ -339,7 +339,7 @@ class BaseLMDBDataset(Dataset):
             SHA-512 hash based off five data samples from the dataset.
         """
         hasher = sha512()
-        num_samples = len(self)
+        num_samples = len(self) - 1
         # get the first and last points, plus quantiles in between
         # as indicative samples
         indices = (
