@@ -5,6 +5,9 @@ from typing import Any, Literal
 from logging import getLogger
 from abc import abstractmethod
 from random import sample as choose_without_replacement
+from pathlib import Path
+from os import makedirs
+from json import dump
 
 import torch
 from torch.utils.data import Dataset
@@ -155,3 +158,24 @@ class AbstractLabelTransform(AbstractDataTransform):
             sample = dataset.__getitem__(index)
             data_samples.append(sample)
         return data_samples
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}_{self.parent_dataset_type}_{self.label_key}-{self.agg_method}"
+
+    @property
+    def _base_cache_path(self) -> Path:
+        return Path.cwd().joinpath("transform_cache")
+
+    def cache_transform(self) -> None:
+        """
+        Method for serializing the current transform.
+
+        This basically makes it as streamlined as possible by using
+        a default cache directory in the path the user is running in,
+        and saves the output of ``serializable_format`` as JSON.
+        """
+        makedirs(self._base_cache_path, exist_ok=True)
+        output_path = self._base_cache_path.joinpath(repr(self) + ".json")
+        with open(output_path, "w+") as write_file:
+            dump(self.serializable_format, write_file)
+        logger.info(f"Caching label transform to {output_path}")
