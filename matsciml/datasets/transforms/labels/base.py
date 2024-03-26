@@ -95,7 +95,7 @@ class AbstractLabelTransform(AbstractDataTransform):
             "sha512": self.data_sha512,
             "key": self.label_key,
             "value": getattr(self, "value", None),
-            "agg_func": getattr(self, "agg_func", None),
+            "agg_method": getattr(self, "agg_method", None),
             "num_samples": self.num_samples,
         }
 
