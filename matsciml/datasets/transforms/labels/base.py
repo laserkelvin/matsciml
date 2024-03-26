@@ -7,7 +7,7 @@ from abc import abstractmethod
 from random import sample as choose_without_replacement
 from pathlib import Path
 from os import makedirs
-from json import dump
+from json import dump, load
 
 import torch
 from torch.utils.data import Dataset
@@ -218,3 +218,29 @@ class AbstractLabelTransform(AbstractDataTransform):
         with open(output_path, "w+") as write_file:
             dump(self.serializable_format, write_file)
         logger.info(f"Caching label transform to {output_path}")
+
+    @classmethod
+    def from_json(cls, filepath: str | Path) -> AbstractLabelTransform:
+        """
+        Load a label transform from JSON.
+
+        Parameters
+        ----------
+        filepath : str | Path
+            Filepath to a valid JSON serialized label transform.
+        """
+        if isinstance(filepath, str):
+            filepath = Path(filepath)
+        assert filepath.exists(), f"{filepath} could not be found!"
+        with open(filepath, "r") as read_file:
+            data = load(read_file)
+        instance = cls(
+            data["label_key"],
+            data["value"],
+            agg_method=data["agg_method"],
+            num_samples=data["num_samples"],
+        )
+        instance.parent_dataset_type = data["dataset"]
+        instance.data_sha512 = data["sha512"]
+        instance.is_init = True
+        return instance
