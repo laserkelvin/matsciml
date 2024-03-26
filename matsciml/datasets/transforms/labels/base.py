@@ -52,26 +52,38 @@ class AbstractLabelTransform(AbstractDataTransform):
         dataset : BaseLMDBDataset
             Instance of an LMDB dataset.
         """
-        # stash the dataset class name
-        self.parent_dataset_type = dataset
-        # we need to hash the dataset that's actually loaded from disk
-        self.data_sha512 = dataset.data_sample_hash
-        # convert fractional samples to actual number
-        if isinstance(self.num_samples, float):
-            assert (
-                0.0 < self.num_samples <= 1.0
-            ), "Fractional number of samples requested, but not between [0,1]."
-            self.num_samples = int(self.num_samples * len(dataset))
-        elif not self.num_samples:
-            logger.warning(
-                "Number of samples was not provided, "
-                "statistics will be aggregated over the whole dataset!"
-            )
-        self._dataset_len = len(dataset)
-        # if we are using sampling mode, run it at the beginning
-        if self.agg_method == "sampled":
-            self._sampled_agg_func(dataset)
+        # only run through the initialization step if we haven't already
+        if not self.is_init:
+            # stash the dataset class name
+            self.parent_dataset_type = dataset
+            # we need to hash the dataset that's actually loaded from disk
+            self.data_sha512 = dataset.data_sample_hash
+            # convert fractional samples to actual number
+            if isinstance(self.num_samples, float):
+                assert (
+                    0.0 < self.num_samples <= 1.0
+                ), "Fractional number of samples requested, but not between [0,1]."
+                self.num_samples = int(self.num_samples * len(dataset))
+            elif not self.num_samples:
+                logger.warning(
+                    "Number of samples was not provided, "
+                    "statistics will be aggregated over the whole dataset!"
+                )
+            self._dataset_len = len(dataset)
+            # if we are using sampling mode, run it at the beginning
+            if self.agg_method == "sampled":
+                self._sampled_agg_func(dataset)
+            self.is_init = True
         return super().setup_transform(dataset)
+
+    @property
+    def is_init(self) -> bool:
+        """Sets whether or not the transform has been initialized."""
+        return getattr(self, "_is_init", False)
+
+    @is_init.setter
+    def is_init(self, value: bool) -> None:
+        self._is_init = value
 
     @property
     def parent_dataset_type(self) -> str:
