@@ -112,6 +112,7 @@ class AbstractLabelTransform(AbstractDataTransform):
             "value": getattr(self, "value", None),
             "agg_method": getattr(self, "agg_method", None),
             "num_samples": self.num_samples,
+            "transform_type": self.__class__.__name__,
         }
 
     def __eq__(self, other: Any) -> bool:
