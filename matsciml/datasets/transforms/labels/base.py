@@ -102,6 +102,27 @@ class AbstractLabelTransform(AbstractDataTransform):
             "num_samples": self.num_samples,
         }
 
+    def __eq__(self, other: Any) -> bool:
+        """
+        Two label transforms are considered equivalent if:
+
+        1. The referenced datasets are the same,
+        2. Comprise the same data, based on ``data_sha512``,
+        3. Share the same label key and value
+        """
+        if not isinstance(other, AbstractLabelTransform):
+            return False
+        # two label transforms are considered equal if the
+        # referenced datasets are the same, comprising the
+        # the same data, label key/value and aggregation method
+        all_checks = all(
+            [
+                getattr(self, key) == getattr(other, key)
+                for key in ["parent_dataset_type", "data_sha512", "key", "value"]
+            ]
+        )
+        return all_checks
+
     @abstractmethod
     def _sampled_agg_func(self, dataset: BaseLMDBDataset, *args, **kwargs) -> Any:
         """Implements a sampling-based version of the label transformation."""
@@ -122,6 +143,10 @@ class AbstractLabelTransform(AbstractDataTransform):
         """Implements the actual transformation step."""
         ...
 
+    def _post_transform(self, data: DataDict) -> None:
+        """Applies arbitrary logic after transformation."""
+        pass
+
     def __call__(self, data: DataDict) -> DataDict:
         """Introduced to provide the same behavior as any other transform."""
         if self.agg_method == "moving":
@@ -131,7 +156,9 @@ class AbstractLabelTransform(AbstractDataTransform):
             # for static updates
             self._static_agg_func(data)
         # once values have been updated, apply the transform
-        return self.apply_transformation(data)
+        data = self.apply_transformation(data)
+        self._post_transform(data)
+        return data
 
     def sample_data(self, dataset: BaseLMDBDataset) -> list[DataDict]:
         """
