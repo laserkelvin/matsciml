@@ -102,7 +102,8 @@ class AbstractLabelTransform(AbstractDataTransform):
             ):
                 self.value = data["value"]
                 logger.info(
-                    f"Overriding specified {self.label_key} in {self.parent_dataset_type} with new value: {self.value}"
+                    f"Overriding specified {self.label_key} in"
+                    + f"{self.parent_dataset_type} with new value: {self.value}"
                 )
                 # skip other initialization steps
                 self.is_init = True
