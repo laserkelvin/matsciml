@@ -31,6 +31,7 @@ class AbstractLabelTransform(AbstractDataTransform):
         agg_method: Literal["static", "sampled", "moving"] = "moving",
         num_samples: int | float | None = None,
         auto_load_cache: bool = True,
+        auto_save_cache: bool = True,
     ) -> None:
         super().__init__()
         self.label_key = label_key
@@ -41,6 +42,7 @@ class AbstractLabelTransform(AbstractDataTransform):
         self.agg_method = agg_method
         self.num_samples = num_samples
         self.auto_load_cache = auto_load_cache
+        self.auto_save_cache = auto_save_cache
 
     def setup_transform(self, dataset: BaseLMDBDataset) -> None:
         """
