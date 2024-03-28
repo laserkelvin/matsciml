@@ -54,12 +54,14 @@ class AbstractLabelTransform(AbstractDataTransform):
         dataset : BaseLMDBDataset
             Instance of an LMDB dataset.
         """
+        # stash the dataset class name
+        self.parent_dataset_type = dataset
+        # we need to hash the dataset that's actually loaded from disk
+        self.data_sha512 = dataset.data_sample_hash
+        # check to see if we have a cache and if we can use it
+        self._check_cache()
         # only run through the initialization step if we haven't already
         if not self.is_init:
-            # stash the dataset class name
-            self.parent_dataset_type = dataset
-            # we need to hash the dataset that's actually loaded from disk
-            self.data_sha512 = dataset.data_sample_hash
             # convert fractional samples to actual number
             if isinstance(self.num_samples, float):
                 assert (
