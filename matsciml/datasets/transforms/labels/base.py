@@ -281,3 +281,8 @@ class AbstractLabelTransform(AbstractDataTransform):
         instance.data_sha512 = data["sha512"]
         instance.is_init = True
         return instance
+
+    def __del__(self) -> None:
+        """When the object is destroyed, maybe cache the result."""
+        if self.auto_save_cache:
+            self.cache_transform()
