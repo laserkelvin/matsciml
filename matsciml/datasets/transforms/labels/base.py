@@ -30,6 +30,7 @@ class AbstractLabelTransform(AbstractDataTransform):
         value: float | torch.Tensor | None = None,
         agg_method: Literal["static", "sampled", "moving"] = "moving",
         num_samples: int | float | None = None,
+        auto_load_cache: bool = True,
     ) -> None:
         super().__init__()
         self.label_key = label_key
@@ -39,6 +40,7 @@ class AbstractLabelTransform(AbstractDataTransform):
         ), f"Requested agg_method not valid; available: {self.__valid_agg_str__}"
         self.agg_method = agg_method
         self.num_samples = num_samples
+        self.auto_load_cache = auto_load_cache
 
     def setup_transform(self, dataset: BaseLMDBDataset) -> None:
         """
@@ -75,6 +77,35 @@ class AbstractLabelTransform(AbstractDataTransform):
                 self._sampled_agg_func(dataset)
             self.is_init = True
         return super().setup_transform(dataset)
+
+    def _check_cache(self) -> None:
+        """
+        Check the typical location for cached values.
+
+        This will load an available cache if:
+        1. a cache exists,
+        2. the user specifies ``auto_load_cache``,
+        3. the aggregation method is the same.
+
+        Since ``__repr__`` includes the dataset and transform names,
+        this should only trigger if we are using the same transform
+        type, same dataset, and aggregation method.
+        """
+        target_path = self._base_cache_path.joinpath(repr(self) + ".json")
+        if target_path.exists() and self.auto_load_cache:
+            with open(target_path, "r") as read_file:
+                data = load(read_file)
+            # only overwrite the value if the method is the same
+            # and if the data samples/SHA is the same
+            if (data["agg_method"] == self.agg_method) and (
+                data["sha512"] == self.data_sha512
+            ):
+                self.value = data["value"]
+                logger.info(
+                    f"Overriding specified {self.label_key} in {self.parent_dataset_type} with new value: {self.value}"
+                )
+                # skip other initialization steps
+                self.is_init = True
 
     @property
     def is_init(self) -> bool:
