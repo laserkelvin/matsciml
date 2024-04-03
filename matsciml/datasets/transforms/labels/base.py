@@ -8,6 +8,8 @@ from random import sample as choose_without_replacement
 from pathlib import Path
 from os import makedirs
 from json import dump, load
+import atexit
+import signal
 
 import torch
 from torch.utils.data import Dataset
@@ -43,6 +45,12 @@ class AbstractLabelTransform(AbstractDataTransform):
         self.num_samples = num_samples
         self.auto_load_cache = auto_load_cache
         self.auto_save_cache = auto_save_cache
+        if self.auto_save_cache:
+            # this ensures that the cache is dumped when exiting
+            # or if the program crashes
+            atexit.register(self.__del__)
+            signal.signal(signal.SIGINT, self.__del__)
+            signal.signal(signal.SIGTERM, self.__del__)
 
     def setup_transform(self, dataset: BaseLMDBDataset) -> None:
         """

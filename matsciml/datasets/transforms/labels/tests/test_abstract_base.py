@@ -37,3 +37,19 @@ def test_transform_workflow(dset_cls_name: str, label_key: str):
     for index in range(5):
         _ = dset.__getitem__(index)
     assert dset.transforms[0].serializable_format
+
+
+@pytest.mark.parametrize(
+    "dset_cls_name, label_key",
+    combos,
+)
+@pytest.mark.parametrize("agg_method", ["static", "sampled", "moving"])
+def test_transform_save_cache(dset_cls_name: str, label_key: str, agg_method: str):
+    dset_class = registry.get_dataset_class(dset_cls_name)
+    _ = dset_class.from_devset(
+        transforms=[
+            AbstractLabelTransform(
+                label_key, value=1.254, agg_method=agg_method, auto_save_cache=True
+            )
+        ]
+    )
