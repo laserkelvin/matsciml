@@ -38,7 +38,8 @@ class NormalLabelTransform(AbstractLabelTransform):
         if data is None:
             raise KeyError(f"Specified {self.label_key} did not return a value/tensor!")
         data -= self.mean
-        data /= self.std
+        # rescale with epsilon for stability
+        data /= max(self.std, 1e-5)
         sample[self.label_key] = data
         return sample
 
