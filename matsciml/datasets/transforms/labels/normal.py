@@ -117,3 +117,19 @@ class NormalLabelTransform(AbstractLabelTransform):
         self.mean = mean
         self.std = std
         return None
+
+    @property
+    def serializable_format(self) -> dict[str, str | float | None]:
+        """
+        Override the default behavior, saving the mean and std.
+
+        Returns
+        -------
+        dict[str, str | float | None]
+            Dictionary containing the label elements
+        """
+        data = super().serializable_format
+        del data["value"]
+        data["mean"] = self.mean
+        data["std"] = self.std
+        return data
