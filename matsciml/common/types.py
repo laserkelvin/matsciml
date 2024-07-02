@@ -134,8 +134,8 @@ class AtomicStructure:
     pos: torch.Tensor
     atomic_numbers: torch.Tensor
     targets: dict[str, torch.Tensor | float]
-    dataset: str
     target_keys: dict[str, list[str]]
+    dataset: str
     sample_index: int = 0
 
     @property
