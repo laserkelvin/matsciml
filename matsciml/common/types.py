@@ -47,7 +47,11 @@ DataDict = dict[str, Union[float, DataType]]
 BatchDict = dict[str, Union[float, DataType, DataDict]]
 
 
-@dataclass
+class _PydanticConfig:
+    arbitrary_types_allowed = True
+
+
+@dataclass(config=_PydanticConfig)
 class Embeddings:
     """
     Data structure that packs together embeddings from a model.
@@ -104,7 +108,7 @@ class Embeddings:
         return system_embeddings
 
 
-@dataclass
+@dataclass(config=_PydanticConfig)
 class AtomicStructure:
     """
     Implements a data structure holding an atomic structure point cloud.
@@ -129,7 +133,7 @@ class AtomicStructure:
 
     pos: torch.Tensor
     atomic_numbers: torch.Tensor
-    targets: dict[str, torch.Tensor]
+    targets: dict[str, torch.Tensor | float]
     dataset: str
     target_keys: dict[str, list[str]]
     sample_index: int = 0
