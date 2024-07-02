@@ -192,7 +192,24 @@ class AtomicStructure:
             raise KeyError(f"{key} is not an input or target of {self.dataset}")
 
     def __setitem__(self, key: str, value: Any) -> None:
-        setattr(self, key, value)
+        """
+        Set a reference key to a given value.
+
+        If the key exists in ``targets``, we will override
+        the existing ``targets`` entry. Otherwise, we will
+        just set it as a top level attribute.
+
+        Parameters
+        ----------
+        key : str
+            Name of the attribute or target to write to.
+        value : Any
+            Object to stash in the structure.
+        """
+        if key in self.targets:
+            self.targets[key] = value
+        else:
+            setattr(self, key, value)
 
     def __delitem__(self, key: str) -> None:
         """
