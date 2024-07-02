@@ -263,6 +263,10 @@ class AtomicStructure:
             raise KeyError(
                 f"{key} was specified for gradients, but absent from {self.dataset}."
             )
+        if not isinstance(self.tensors[key], torch.FloatTensor):
+            raise RuntimeError(
+                f"Tensor {key} in {self.dataset} was required to have gradients, but is not a float tensor."
+            )
         # if no state is provided, we toggle the flag (i.e. enable gradients if it's off)
         if state is None:
             state = not self.tensors[key].requires_grad
