@@ -151,7 +151,7 @@ class AtomicStructure:
             was found as.
         """
         return_dict = {}
-        for key in dir(self):
+        for key in self.__dict__:
             obj = getattr(self, key)
             if isinstance(obj, torch.Tensor):
                 return_dict[key] = obj
