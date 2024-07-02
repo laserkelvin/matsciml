@@ -156,7 +156,8 @@ class AtomicStructure:
             if isinstance(obj, torch.Tensor):
                 return_dict[key] = obj
         for key, tensor in self.targets.items():
-            return_dict[key] = tensor
+            if isinstance(tensor, torch.Tensor):
+                return_dict[key] = tensor
         return return_dict
 
     def __getitem__(self, key: str) -> Any:
