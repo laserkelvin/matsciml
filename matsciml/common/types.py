@@ -296,12 +296,11 @@ class AtomicStructure:
             if dtype is None:
                 dtype = tensor.dtype
             # figure out where the tensor came from in the data structure
-            if key in dir(self):
-                target = self
+            if key in self.__dict__:
+                setattr(self, key, tensor.to(device, dtype))
             # assume it came from targets dict
             else:
-                target = self.targets
-            setattr(target, key, tensor.to(device, dtype))
+                self.targets[key] = tensor.to(device, dtype)
         # target keys are nested under regression/classification
         for group in self.target_keys.values():
             for target_name in group:
