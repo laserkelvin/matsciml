@@ -175,6 +175,52 @@ class AtomicStructure:
         else:
             raise KeyError(f"{key} is not an input or target of {self.dataset}")
 
+    def __setitem__(self, key: str, value: Any) -> None:
+        setattr(self, key, value)
+
+    def __delitem__(self, key: str) -> None:
+        """
+        Deletes an attribute from the data structure.
+
+        Will first check the presence of the key at the top level
+        structure, and if it isn't there, check in ``targets``.
+
+        Parameters
+        ----------
+        key : str
+            Key to search for within the data structure.
+
+        Raises
+        ------
+        KeyError:
+            If the key is missing from either the top level structure
+            or from the ``targets`` dictionary.
+        """
+        if key in dir(self):
+            delattr(self, key)
+        elif key in self.targets:
+            del self.targets[key]
+        else:
+            raise KeyError(f"Attempted to delete {key}, but is not in {self.dataset}.")
+
+    def __contains__(self, key: str) -> bool:
+        """
+        Implements magic method for checking if a key is contained in
+        the data structure, including both top level and ``targets``.
+
+        Parameters
+        ----------
+        key : str
+            Key to check for availability in the data structure.
+
+        Returns
+        -------
+        bool
+            True if the key is in either the structure or within ``targets``.
+        """
+        tensor_keys = set(self.tensors.keys())
+        return key in tensor_keys
+
     def to(
         self, device: str | torch.device | None = None, dtype: torch.dtype | None = None
     ):
