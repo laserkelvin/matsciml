@@ -221,6 +221,38 @@ class AtomicStructure:
         tensor_keys = set(self.tensors.keys())
         return key in tensor_keys
 
+    def set_require_grad(self, key: str, state: bool | None = None) -> None:
+        """
+        Sets the ``requires_grad`` state of a tensor within the structure.
+
+        If a ``state`` is passed, it will be set to that state explicitly.
+        Otherwise, the default behavior will flip the existing state, i.e.
+        if ``requires_grad`` for a tensor was originally ``False``, calling
+        this function on a tensor referenced by ``key`` will set it to ``True``.
+
+        Parameters
+        ----------
+        key : str
+            Key referencing the tensor, which is expected to be
+            contained in the ``tensors`` class property.
+        state : bool | None, default None
+            Explicit state to set the ``requires_grad`` to. By
+            default None, which will negate the existing state.
+
+        Raises
+        ------
+        KeyError:
+            If the tensor cannot be found within this data structure.
+        """
+        if key not in self.tensors.keys():
+            raise KeyError(
+                f"{key} was specified for gradients, but absent from {self.dataset}."
+            )
+        # if no state is provided, we toggle the flag (i.e. enable gradients if it's off)
+        if state is None:
+            state = not self.tensors[key].requires_grad
+        self.tensors[key].requires_grad_(state)
+
     def to(
         self, device: str | torch.device | None = None, dtype: torch.dtype | None = None
     ):
