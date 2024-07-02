@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic.dataclasses import dataclass
 from dataclasses import field
-from typing import Callable, Union
+from typing import Any, Callable, Union
 
 import torch
 
@@ -91,3 +91,122 @@ class Embeddings:
         system_embeddings = reduction(self.point_embedding, **self.reduction_kwargs)
         self.system_embedding = system_embeddings
         return system_embeddings
+
+
+@dataclass
+class AtomicStructure:
+    """
+    Implements a data structure holding an atomic structure point cloud.
+
+    This serves as a basis for more specialized structures by providing
+    some commonly used routines and patterns.
+
+    Attributes
+    ----------
+    pos : torch.Tensor
+        2D tensor comprising coordinates of atoms.
+        Expected shape is [num_atoms, 3].
+    atomic_numbers : torch.Tensor
+        1D atomic numbers of each atom. Expected shape is [num_atoms]
+    targets : dict[str, torch.Tensor | float]
+        Dictionary of ground truth values.
+    target_keys : dict[str, list[str]]
+        Target keys for each task category (regression/classification).
+        Under each category is a list of keys that refer to the ``targets``
+        dictionary.
+    """
+
+    pos: torch.Tensor
+    atomic_numbers: torch.Tensor
+    targets: dict[str, torch.Tensor]
+    dataset: str
+    target_keys: dict[str, list[str]]
+    sample_index: int = 0
+
+    @property
+    def tensors(self) -> dict[str, torch.Tensor]:
+        """
+        Return the tensors contained within this data structure,
+        including within ``targets``.
+
+        Returns
+        -------
+        dict[str, torch.Tensor]
+            Collection of tensors, using the original key it
+            was found as.
+        """
+        return_dict = {}
+        for key in dir(self):
+            obj = getattr(self, key)
+            if isinstance(obj, torch.Tensor):
+                return_dict[key] = obj
+        for key, tensor in self.targets.items():
+            return_dict[key] = tensor
+        return return_dict
+
+    def __getitem__(self, key: str) -> Any:
+        """
+        Looks into the current structure for a specified key.
+
+        If the key is present in either the top level, or within
+        the ``targets`` dictionary, we return the value it references.
+
+        Parameters
+        ----------
+        key
+            Key to search within the data structure for.
+
+        Returns
+        -------
+        Any
+            What ever the referenced value represents.
+
+        Raises
+        ------
+        KeyError:
+            If the key does not exist in either the top level data
+            structure or the ``targets`` dictionary, we raise a
+            ``KeyError`` to inform the user of a missing key.
+        """
+        if key in dir(self):
+            return getattr(self, key)
+        if key in self.targets:
+            return self.targets.get(key)
+        else:
+            raise KeyError(f"{key} is not an input or target of {self.dataset}")
+
+    def to(
+        self, device: str | torch.device | None = None, dtype: torch.dtype | None = None
+    ):
+        """
+        Perform an in-place (as far as Python is concerned) operation to move
+        or typecast tensors within the data structure.
+
+        This provides a similar interface to PyTorch for collectively
+        performing operations on a set of tensors.
+
+        Parameters
+        ----------
+        device : str | torch.device | None, default None
+            Device to move all tensors to, by default None which
+            performs no movement (i.e. to itself).
+        dtype : torch.dtype | None, default None
+            Data type to cast all tensors to, by default None
+            which does not perform any casting.
+        """
+        for key, tensor in self.tensors.items():
+            if dtype is None:
+                dtype = tensor.dtype
+            # figure out where the tensor came from in the data structure
+            if key in dir(self):
+                target = self
+            # assume it came from targets dict
+            else:
+                target = self.targets
+            setattr(target, key, tensor.to(device, dtype))
+        # target keys are nested under regression/classification
+        for group in self.target_keys.values():
+            for target_name in group:
+                value = self.targets[target_name]
+                if isinstance(value, torch.Tensor):
+                    self.targets[target_name] = value.to(device, dtype)
