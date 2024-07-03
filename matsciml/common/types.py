@@ -61,6 +61,7 @@ SystemEmbeddingTensor = Float[torch.Tensor, "graphs ... dim"]
 # for storing edges, we choose the PyG [2, num_edges] format
 EdgeTensor = Int[torch.Tensor, "2 edges"]
 CellTensor = Float[torch.Tensor, "_ 3 3"]
+ImageTensor = Float[torch.Tensor, "nodes 3"]
 
 
 class _PydanticConfig:
@@ -157,6 +158,7 @@ class AtomicStructure:
     sample_index: int = 0
     point_group: int | None = None
     cell: CellTensor | None = None
+    images: torch.FloatTensor | None = None
 
     @property
     def tensors(self) -> dict[str, torch.Tensor]:
