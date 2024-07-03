@@ -158,7 +158,8 @@ class AtomicStructure:
     sample_index: int = 0
     point_group: int | None = None
     cell: CellTensor | None = None
-    images: torch.FloatTensor | None = None
+    images: ImageTensor | None = None
+    pc_features: torch.FloatTensor | None = None
 
     @property
     def num_atoms(self) -> int:
