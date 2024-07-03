@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from typing import Annotated, Literal
+
 from pydantic.dataclasses import dataclass
 from dataclasses import field
 from typing import Any, Callable, Union
+from pydantic_tensor import Tensor
+from pydantic_tensor import types as tensor_types
+from pydantic import Field
 
 import torch
 
@@ -45,6 +50,19 @@ DataDict = dict[str, Union[float, DataType]]
 
 # for a dictionary of batched data
 BatchDict = dict[str, Union[float, DataType, DataDict]]
+
+# for specific tensors, we define expected shapes
+DimType = Annotated[int, Field(ge=1)]
+# we always expect at least primitive coordinates to be 2D
+Coordinates = Tensor[torch.Tensor, tuple[DimType, Literal[3]], tensor_types.Float]
+# these are used for type and shape checking
+# typically this represents [`num_graphs`]
+ScalarTensor = Tensor[torch.Tensor, tuple[DimType], tensor_types.Float]
+# typically this represents [`num_nodes`, dim] like forces
+FieldTensor = Tensor[torch.Tensor, tuple[DimType, DimType], tensor_types.Float]
+EmbeddingTensor = Tensor[torch.Tensor, tuple[DimType, DimType], tensor_types.Float]
+# for storing edges, we choose the PyG [2, num_edges] format
+EdgeTensor = Tensor[torch.Tensor, tuple[Literal[2], DimType], tensor_types.Int]
 
 
 class _PydanticConfig:
