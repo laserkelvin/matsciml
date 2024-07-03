@@ -50,7 +50,7 @@ BatchDict = dict[str, Union[float, DataType, DataDict]]
 
 # for specific tensors, we define expected shapes
 # we always expect at least primitive coordinates to be 2D
-Coordinates = Int[torch.Tensor, "nodes 3"]
+CoordinateTensor = Int[torch.Tensor, "nodes 3"]
 # these are used for type and shape checking
 # typically this represents [`num_graphs`]
 ScalarTensor = Real[torch.Tensor, ""]
@@ -148,7 +148,7 @@ class AtomicStructure:
         dictionary.
     """
 
-    pos: Coordinates
+    pos: CoordinateTensor
     atomic_numbers: ScalarTensor
     targets: dict[str, ScalarTensor | FieldTensor | float]
     target_keys: dict[str, list[str]]
