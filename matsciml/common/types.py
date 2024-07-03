@@ -161,6 +161,11 @@ class AtomicStructure:
     images: torch.FloatTensor | None = None
 
     @property
+    def num_atoms(self) -> int:
+        """Get the number of atoms in the structure."""
+        return len(self.atomic_numbers)
+
+    @property
     def tensors(self) -> dict[str, torch.Tensor]:
         """
         Return the tensors contained within this data structure,
