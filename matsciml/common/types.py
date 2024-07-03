@@ -135,13 +135,13 @@ class AtomicStructure:
 
     Attributes
     ----------
-    pos : torch.Tensor
+    pos : CoordinateTensor
         2D tensor comprising coordinates of atoms.
         Expected shape is [num_atoms, 3].
-    atomic_numbers : torch.Tensor
+    atomic_numbers : ScalarTensor
         1D atomic numbers of each atom. Expected shape is [num_atoms]
-    targets : dict[str, torch.Tensor | float]
-        Dictionary of ground truth values.
+    targets : dict[str, ScalarTensor | FieldTensor | float]
+        Dictionary of ground truth values. Can be float, or an N-D tensor.
     target_keys : dict[str, list[str]]
         Target keys for each task category (regression/classification).
         Under each category is a list of keys that refer to the ``targets``
