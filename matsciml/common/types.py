@@ -57,9 +57,9 @@ DimType = Annotated[int, Field(ge=1)]
 Coordinates = Tensor[torch.Tensor, tuple[DimType, Literal[3]], tensor_types.Float]
 # these are used for type and shape checking
 # typically this represents [`num_graphs`]
-ScalarTensor = Tensor[torch.Tensor, tuple[DimType], tensor_types.Float]
+ScalarTensor = Tensor[torch.Tensor, tuple[DimType], Any]
 # typically this represents [`num_nodes`, dim] like forces
-FieldTensor = Tensor[torch.Tensor, tuple[DimType, DimType], tensor_types.Float]
+FieldTensor = Tensor[torch.Tensor, tuple[DimType, DimType], Any]
 EmbeddingTensor = Tensor[torch.Tensor, tuple[DimType, DimType], tensor_types.Float]
 # for storing edges, we choose the PyG [2, num_edges] format
 EdgeTensor = Tensor[torch.Tensor, tuple[Literal[2], DimType], tensor_types.Int]
