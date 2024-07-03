@@ -356,3 +356,168 @@ class AtomicStructure:
                 value = self.targets[target_name]
                 if isinstance(value, torch.Tensor):
                     self.targets[target_name] = value.to(device, dtype)
+
+
+class GraphStructure(AtomicStructure):
+    _graph: AbstractGraph
+    offsets: ImageTensor
+    graph_keys: list[str] | None = None
+
+    @property
+    def is_pyg(self) -> bool:
+        """
+        Simple property to report if the graph is PyG or not.
+
+        This should readily simplify routines that need to determine
+        how to act on/with a graph.
+
+        Returns
+        -------
+        bool
+            True if the graph is from ``torch_geometric``, False
+            if it isn't or if PyG is not installed.
+        """
+        if package_registry["pyg"]:
+            return isinstance(self._graph, PyGGraph)
+        return False
+
+    @property
+    def edges(self) -> EdgeTensor:
+        """
+        Return the edges of the graph.
+
+        For PyG we return the edge index as is, and for DGLGraph
+        we stack the ``src``/``dst`` nodes together to match what
+        is expected for ``EdgeTensor``.
+
+        Returns
+        -------
+        EdgeTensor
+            Long tensor of shape [2, num_edges].
+        """
+        if self.is_pyg:
+            return self._graph.edge_index
+        else:
+            src, dst = self._graph.edges
+            return torch.stack([src, dst])
+
+    @property
+    def src_nodes(self) -> torch.LongTensor:
+        return self.edges[0, :]
+
+    @property
+    def dst_nodes(self) -> torch.LongTensor:
+        return self.edges[1, :]
+
+    @property
+    def tensors(self) -> dict[str, torch.Tensor]:
+        tensor_dict = super().tensors
+        # for DGL graphs, we have to look in ndata/edata
+        if not self.is_pyg:
+            for n_key, ndata in self._graph.ndata.items():
+                tensor_dict[n_key] = ndata
+            for e_key, edata in self._graph.edata.items():
+                tensor_dict[e_key] = edata
+        return tensor_dict
+
+    @property
+    def num_nodes(self) -> int:
+        return self.num_atoms
+
+    @property
+    def num_edges(self) -> int:
+        return self.edges.size(-1)
+
+    @property
+    def node_data(self) -> dict[str, torch.Tensor]:
+        """
+        Return tensors that represent node features.
+
+        This property naively assumes that if the first dimension
+        of any tensor matches the number of nodes, it is a node
+        feature.
+
+        Returns
+        -------
+        dict[str, torch.Tensor]
+            Dictionary mapping of attribute name and tensor
+            that corresponds to a node feature.
+        """
+        data = {}
+        for key, tensor in self.tensors.items():
+            if tensor.size(0) == self.num_nodes:
+                data[key] = tensor
+        return data
+
+    @property
+    def edge_data(self) -> dict[str, torch.Tensor]:
+        """
+        Return tensors that represent edge features.
+
+        This property naively assumes that if the first dimension
+        of any tensor matches the number of edges, it is an edge
+        feature.
+
+        Returns
+        -------
+        dict[str, torch.Tensor]
+            Dictionary mapping of attribute name and tensor
+            that corresponds to an edge feature.
+        """
+        data = {}
+        for key, tensor in self.tensors.items():
+            if tensor.size(0) == self.num_edges:
+                data[key] = tensor
+        return data
+
+    @property
+    def graph_data(self) -> dict[str, ScalarTensor | float]:
+        """
+        This property returns data referenced by ``graph_keys``.
+
+        This requires the user/developer to define what properties
+        are considered graph-level variables/features as there
+        is no real way to determine what they are by shape inspection.
+
+        Returns
+        -------
+        dict[str, ScalarTensor | float]
+            Dictionary mapping of key/tensor for graph variables,
+            according to ``graph_keys``.
+
+        Raises
+        ------
+        RuntimeError:
+            If there are no ``graph_keys`` set at creation, this
+            property cannot work and we raise a ``RuntimeError``.
+        KeyError:
+            If a key in ``graph_keys`` is not found in the data
+            structure, we raise a ``KeyError``.
+        """
+        if self.graph_keys is None:
+            raise RuntimeError(
+                "Expected to use graph-level features, but ``graph_keys`` was not set."
+            )
+        graph_feats = {}
+        for key in self.graph_keys:
+            if key not in self:
+                raise KeyError(
+                    f"Expected {key} to be in {self.dataset} but was not found."
+                )
+            graph_feats[key] = self[key]
+        return graph_feats
+
+    def local_scope(self):
+        """
+        Wraps the graph local scope context for DGL.
+
+        Raises
+        ------
+        RuntimeError:
+            If the graph is a PyG graph, which does not have
+            this context manager implemented, we raise a
+            ``RuntimeError``.
+        """
+        if self.is_pyg:
+            raise RuntimeError("PyG does not have local scope implemented.")
+        return self._graph.local_scope
