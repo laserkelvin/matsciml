@@ -268,6 +268,8 @@ class AtomicStructure:
         """
         Implements magic method for checking if a key is contained in
         the data structure, including both top level and ``targets``.
+        Notably, this does not only refer to tensors, but also all
+        data types.
 
         Parameters
         ----------
@@ -280,7 +282,9 @@ class AtomicStructure:
             True if the key is in either the structure or within ``targets``.
         """
         tensor_keys = set(self.tensors.keys())
-        return key in tensor_keys
+        top_level_keys = set(self.__dict__.keys())
+        all_keys = tensor_keys.union(top_level_keys)
+        return key in all_keys
 
     def set_require_grad(self, key: str, state: bool | None = None) -> None:
         """
