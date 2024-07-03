@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 
-from pydantic.dataclasses import dataclass
-from dataclasses import field
+from dataclasses import field, dataclass
 from typing import Any, Callable, Union
 
 import torch
-from jaxtyping import Float, Int, Real
+from jaxtyping import Float, Int, Real, jaxtyped
+from beartype import beartype
 
 from matsciml.common import package_registry
 
@@ -50,7 +50,7 @@ BatchDict = dict[str, Union[float, DataType, DataDict]]
 
 # for specific tensors, we define expected shapes
 # we always expect at least primitive coordinates to be 2D
-Coordinates = Float[torch.Tensor, "nodes ... 3"]
+Coordinates = Int[torch.Tensor, "nodes 3"]
 # these are used for type and shape checking
 # typically this represents [`num_graphs`]
 ScalarTensor = Real[torch.Tensor, ""]
@@ -66,7 +66,8 @@ class _PydanticConfig:
     arbitrary_types_allowed = True
 
 
-@dataclass(config=_PydanticConfig)
+@jaxtyped(typechecker=beartype)
+@dataclass
 class Embeddings:
     """
     Data structure that packs together embeddings from a model.
@@ -123,7 +124,8 @@ class Embeddings:
         return system_embeddings
 
 
-@dataclass(config=_PydanticConfig)
+@jaxtyped(typechecker=beartype)
+@dataclass
 class AtomicStructure:
     """
     Implements a data structure holding an atomic structure point cloud.
@@ -148,7 +150,7 @@ class AtomicStructure:
 
     pos: Coordinates
     atomic_numbers: ScalarTensor
-    targets: dict[str, torch.Tensor | float]
+    targets: dict[str, ScalarTensor | FieldTensor | float]
     target_keys: dict[str, list[str]]
     dataset: str
     sample_index: int = 0
