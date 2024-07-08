@@ -581,3 +581,44 @@ class BatchMixin:
     @mask.setter
     def mask(self, values: MaskTensor | None) -> None:
         self._mask = values
+
+    @classmethod
+    def from_samples(cls, samples: list[AtomicStructure]) -> DataDict:
+        """
+        The intention of this method is to provide a common basis
+        for batching either graphs or point clouds: we extract information
+        about the number of samples, number of points/nodes per sample,
+        and so on.
+        """
+        batch_size = len(samples)
+        num_nodes = [s.num_atoms for s in samples]
+        max_padding = max(num_nodes)
+        batch_list = []
+        mask = []
+        for index, count in enumerate(num_nodes):
+            batch_list.extend(
+                [
+                    index,
+                ]
+                * count
+            )
+            # work out the padding for a single sample
+            sample_mask = [
+                True,
+            ] * count
+            if (pad_amount := max_padding - count) > 0:
+                sample_mask.extend(
+                    [
+                        False,
+                    ]
+                    * (pad_amount)
+                )
+            mask.append(sample_mask)
+        data_dict = {
+            "batch_size": batch_size,
+            "num_nodes": num_nodes,
+            "max_padding": max_padding,
+            "batch": batch_list,
+            "mask": mask,
+        }
+        return data_dict
