@@ -189,6 +189,26 @@ class AtomicStructure:
                 return_dict[key] = tensor
         return return_dict
 
+    @property
+    def device(self) -> torch.device:
+        """
+        Return the device tensors reside on.
+
+        This property aggregates devices for all of the tensors
+        contained within this data structure, and if it passes
+        the check where all of them reside on the same device,
+        returns the device they are on.
+
+        Returns
+        -------
+        torch.device
+            Reference to the device that comprises all tensors.
+        """
+        # check to make sure all tensors reside on the same device
+        devices = [tensor.device for tensor in self.tensors.values()]
+        assert len(set(devices)) == 1, "Not all tensors reside on the same device!"
+        return devices[0]
+
     def __getitem__(self, key: str) -> Any:
         """
         Looks into the current structure for a specified key.
