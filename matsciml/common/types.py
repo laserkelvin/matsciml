@@ -84,10 +84,6 @@ ImageTensor = Float[torch.Tensor, "nodes 3"]
 MaskTensor = Bool[torch.Tensor, "batch padded_num_nodes"]
 
 
-class _PydanticConfig:
-    arbitrary_types_allowed = True
-
-
 @jaxtyped(typechecker=beartype)
 @dataclass
 class Embeddings:
