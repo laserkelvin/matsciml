@@ -5,7 +5,7 @@ from dataclasses import field, dataclass
 from typing import Any, Callable, Union
 
 import torch
-from jaxtyping import Float, Int, Real, jaxtyped
+from jaxtyping import Float, Bool, Int, Real, jaxtyped
 from beartype import beartype
 
 from matsciml.common import package_registry
@@ -62,6 +62,7 @@ SystemEmbeddingTensor = Float[torch.Tensor, "graphs ... dim"]
 EdgeTensor = Int[torch.Tensor, "2 edges"]
 CellTensor = Float[torch.Tensor, "_ 3 3"]
 ImageTensor = Float[torch.Tensor, "nodes 3"]
+MaskTensor = Bool[torch.Tensor, "batch padded_num_nodes"]
 
 
 class _PydanticConfig:
