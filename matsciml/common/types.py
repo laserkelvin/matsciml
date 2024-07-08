@@ -521,3 +521,36 @@ class GraphStructure(AtomicStructure):
         if self.is_pyg:
             raise RuntimeError("PyG does not have local scope implemented.")
         return self._graph.local_scope
+
+
+class BatchMixin:
+    @property
+    def batch_size(self) -> int:
+        """Returns the number of samples in the batch."""
+        return self._batch_size
+
+    @batch_size.setter
+    def batch_size(self, value: int) -> None:
+        self._batch_size = value
+
+    @property
+    def batch(self) -> torch.LongTensor:
+        """Returns a 1D tensor of node batch number mappings."""
+        return self._batch
+
+    @batch.setter
+    def batch(self, values: list[int] | torch.Tensor) -> None:
+        if isinstance(values, list):
+            values = torch.LongTensor(values)
+        if not values.dtype == torch.long:
+            values = values.long()
+        self._batch = values
+
+    @property
+    def mask(self) -> torch.Tensor | None:
+        """Returns a mask for point clouds."""
+        return self._mask
+
+    @mask.setter
+    def mask(self, values: torch.Tensor | None) -> None:
+        self._mask = values
