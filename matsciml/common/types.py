@@ -560,10 +560,24 @@ class BatchMixin:
         self._batch = values
 
     @property
-    def mask(self) -> torch.Tensor | None:
-        """Returns a mask for point clouds."""
-        return self._mask
+    def mask(self) -> MaskTensor | None:
+        """
+        Returns a boolean tensor that indicates real/padded nodes.
+
+        This is primarily intended for point cloud representations,
+        which require padding for batching. If not set, returns
+        the default value ``None`` which is expected for graph-types.
+        The expected shape for the tensor is
+        ``[batch_size, padded_num_nodes]``.
+
+        Returns
+        -------
+        torch.Tensor | None
+            Returns a boolean tensor of shape ``[batch_size, padding]``
+            if it is set. Otherwise, returns None.
+        """
+        return getattr(self, "_mask", None)
 
     @mask.setter
-    def mask(self, values: torch.Tensor | None) -> None:
+    def mask(self, values: MaskTensor | None) -> None:
         self._mask = values
