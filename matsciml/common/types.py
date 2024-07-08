@@ -535,7 +535,19 @@ class BatchMixin:
 
     @property
     def batch(self) -> torch.LongTensor:
-        """Returns a 1D tensor of node batch number mappings."""
+        """
+        Returns a ``batch`` tensor in the PyG sense.
+
+        This provides a ``LongTensor`` with shape ``[num_nodes]``,
+        where the value of each element corresponds to the sample
+        index each node belongs to, similar to how PyG indicates
+        membership.
+
+        Returns
+        -------
+        torch.LongTensor
+            LongTensor containing sample indices for each node.
+        """
         return self._batch
 
     @batch.setter
