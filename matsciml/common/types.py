@@ -618,12 +618,15 @@ class BatchMixin:
         self._mask = values
 
     @classmethod
-    def from_samples(cls, samples: list[AtomicStructure]) -> DataDict:
+    def from_samples(cls, samples: list[AtomicStructure]) -> BatchInfo:
         """
         The intention of this method is to provide a common basis
         for batching either graphs or point clouds: we extract information
         about the number of samples, number of points/nodes per sample,
         and so on.
+
+        Returns a ``BatchInfo`` data structure, which contains information
+        necessary for batching and unbatching.
         """
         batch_size = len(samples)
         num_nodes = [s.num_atoms for s in samples]
@@ -649,11 +652,8 @@ class BatchMixin:
                     * (pad_amount)
                 )
             mask.append(sample_mask)
-        data_dict = {
-            "batch_size": batch_size,
-            "num_nodes": num_nodes,
-            "max_padding": max_padding,
-            "batch": batch_list,
-            "mask": mask,
-        }
-        return data_dict
+        mask = torch.BoolTensor(mask)
+        info = BatchInfo(
+            batch_size, torch.LongTensor(batch_list), max_padding, mask, num_nodes
+        )
+        return info
