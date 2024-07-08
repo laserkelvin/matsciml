@@ -48,6 +48,25 @@ DataDict = dict[str, Union[float, DataType]]
 # for a dictionary of batched data
 BatchDict = dict[str, Union[float, DataType, DataDict]]
 
+
+@jaxtyped(typechecker=beartype)
+@dataclass
+class BatchInfo:
+    """
+    Data structure for holding information necessary for
+    batching and unbatching operations.
+
+    Uses ``jaxtyping`` and ``beartype`` for runtime type
+    checks.
+    """
+
+    batch_size: int
+    batch: torch.LongTensor
+    pad_max: int
+    mask: torch.BoolTensor | None
+    nodes_per_sample: list[int]
+
+
 # for specific tensors, we define expected shapes
 # we always expect at least primitive coordinates to be 2D
 CoordinateTensor = Int[torch.Tensor, "nodes 3"]
