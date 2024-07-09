@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from dataclasses import field, dataclass
 from typing import Any, Callable, Union
+from inspect import signature
 
 import torch
+from torch.utils.data import default_collate
 from jaxtyping import Float, Bool, Int, Real, jaxtyped
 from beartype import beartype
 
@@ -27,11 +29,13 @@ graph_types = []
 
 if package_registry["pyg"]:
     from torch_geometric.data import Data as PyGGraph
+    from torch_geometric.data import Batch as PyGBatch
 
     representations.append(PyGGraph)
     graph_types.append(PyGGraph)
 if package_registry["dgl"]:
     from dgl import DGLGraph
+    from dgl import batch as dgl_batch
 
     representations.append(DGLGraph)
     graph_types.append(DGLGraph)
@@ -657,3 +661,145 @@ class BatchMixin:
             batch_size, torch.LongTensor(batch_list), max_padding, mask, num_nodes
         )
         return info
+
+
+def pad_point_cloud(
+    data: list[torch.Tensor],
+    max_size: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Pads a point cloud to the maximum size within a batch.
+
+    All this does is just initialize two tensors with an added batch dimension,
+    with the number of centers/neighbors padded to the maximum point cloud
+    size within a batch. This assumes "symmetric" point clouds, i.e. where
+    the number of atom centers is the same as the number of neighbors.
+
+    Parameters
+    ----------
+    data : List[torch.Tensor]
+        List of point cloud data to batch
+    max_size : int
+        Number of particles per point cloud
+
+    Returns
+    -------
+    Tuple[torch.Tensor, torch.Tensor]
+        Returns the padded data, along with a mask
+    """
+    batch_size = len(data)
+    data_dim = data[0].dim()
+    # get the feature dimension
+    if data_dim == 1:
+        feat_dim = max_size
+    else:
+        feat_dim = data[0].size(-1)
+    zeros_dims = [batch_size, *[max_size] * (data_dim - 1), feat_dim]
+    result = torch.zeros((zeros_dims), dtype=data[0].dtype)
+    mask = torch.zeros((zeros_dims[:-1]), dtype=torch.bool)
+
+    for index, entry in enumerate(data):
+        # Get all indices from entry, we we can use them to pad result. Add batch idx to the beginning.
+        indices = [torch.tensor(index)] + [torch.arange(size) for size in entry.shape]
+        indices = torch.meshgrid(*indices, indexing="ij")
+        # Use the index_put method to pop entry into result.
+        result.index_put_(tuple(indices), entry)
+        mask.index_put_(indices[:-1], torch.tensor(True))
+
+    return (result, mask)
+
+
+def collate_1d_fn(
+    tensors: list[torch.Tensor | ImageTensor], node_dim: int = 0
+) -> torch.Tensor:
+    """
+    This function is used to concatenate tensors along the first
+    dimension: this is applied to node and edge properties.
+
+    Parameters
+    ----------
+    tensors : list[torch.Tensor]
+        List of node/edge properties to concatenate.
+    node_dim : int
+        Optional specification to concatenate along, defaults
+        to ``dim=0`` which is the most commonly used axis.
+
+    Returns
+    -------
+    torch.Tensor
+        Concatenated feature tensor
+    """
+    return torch.cat(tensors, dim=node_dim)
+
+
+def collate_cells_fn(cells: list[CellTensor]) -> CellTensor:
+    """
+    Collate a set of ``CellTensor``s into a single ``CellTensor``.
+
+    Parameters
+    ----------
+    cells : list[CellTensor]
+        List of cells to concatenate.
+
+    Returns
+    -------
+    CellTensor
+        Concatenated CellTensor, shape [batch, 3, 3].
+    """
+    # check if we need to add a dimension or not
+    if cells[0].ndim == 2:
+        return torch.stack(cells)
+    else:
+        return torch.cat(cells, dim=0)
+
+
+class BatchedGraphStructure(GraphStructure, BatchMixin):
+    @classmethod
+    def from_samples(cls, samples: list[GraphStructure]) -> BatchedGraphStructure:
+        batch_info = super().from_samples(samples)
+        is_pyg = samples[0].is_pyg
+        if is_pyg:
+            batch_func = PyGBatch
+        else:
+            batch_func = dgl_batch
+        batched_graph = batch_func([s._graph for s in samples])
+        sample = samples[0]
+        mapping = {}
+        graph_tensor_keys = list(sample.tensors.keys())
+        # take these specific keys as they are needed by the
+        # base data structure
+        base_arg_keys = list(signature(GraphStructure).parameters.keys())
+        # look for collated tensors: this ensures we keep references and
+        # not copies of tensors
+        for key in base_arg_keys:
+            if key in graph_tensor_keys:
+                if is_pyg:
+                    mapping[key] = getattr(batched_graph, key)
+                else:
+                    # for dgl we have to figure out where it resides
+                    if key in batched_graph.ndata:
+                        mapping[key] = batched_graph.ndata.get(key)
+                    else:
+                        mapping[key] = batched_graph.edata.get(key)
+        # now we add things that aren't tensors
+        for key in ["dataset", "sample_index", "point_group"]:
+            mapping[key] = default_collate([getattr(s, key) for s in samples])
+        # point cloud features are not used
+        mapping["pc_features"] = None
+        # PBC cells have a dedicated function
+        mapping["cell"] = collate_cells_fn([s.cell for s in samples])
+        # use the same function for contatenating these two
+        mapping["images"] = collate_1d_fn([s.images for s in samples], node_dim=0)
+        mapping["offsets"] = collate_1d_fn([s.offsets for s in samples], node_dim=0)
+        # copy over target references as well
+        mapping["targets"] = default_collate([s.targets for s in samples])
+        # now for un-concatenated data
+        mapping["graph_keys"] = samples[0].graph_keys
+        mapping["target_keys"] = samples[0].target_keys
+        mapping["_graph"] = batched_graph
+        # create the batch and set respective property values
+        batched_obj = cls(**mapping)
+        batched_obj.batch_size = batch_info.batch_size
+        batched_obj.batch = batch_info.batch
+        batched_obj.mask = None
+        return batched_obj
