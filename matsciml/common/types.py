@@ -398,6 +398,8 @@ class AtomicStructure:
                     self.targets[target_name] = value.to(device, dtype)
 
 
+@jaxtyped(typechecker=beartype)
+@dataclass(kw_only=True)
 class GraphStructure(AtomicStructure):
     _graph: AbstractGraph
     offsets: ImageTensor
